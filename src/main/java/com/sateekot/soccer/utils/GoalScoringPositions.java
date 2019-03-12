@@ -9,13 +9,13 @@ public enum GoalScoringPositions {
 
 	// Level 1
 	LEFT("left"),
-	CENTER("center"),
+	CENTER("centre"),
 	RIGHT("right");
 	
 	/*
 	 *  Next Levels 
 	 *  1. Top left, Bottom Left, Center, Top right, Bottom right
-	 *  2. Top left, Top center, Top right, Middle left, Middle center, Middle right, Bottom left, Bottom center, Bottom right
+	 *  2. Top left, Top centre, Top right, Middle left, Middle center, Middle right, Bottom left, Bottom center, Bottom right
 	 */
 	
 	private String position;

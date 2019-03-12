@@ -1,6 +1,12 @@
 package com.sateekot.soccer.utils;
 
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang3.math.NumberUtils;
+import static com.sateekot.soccer.utils.SoccerConstants.computerTeamsList;
 
 /**
  * 
@@ -33,5 +39,12 @@ public class SoccerUtils {
 			return userOption.MIN_VALUE;
 		}
 		return userOption;
+	}
+	
+	public static String comRandomTeam() {
+		Random randomGenerator = new Random();
+		int randomNumber = randomGenerator.nextInt(computerTeamsList.size());
+		String randomTeam = computerTeamsList.get(randomNumber);
+		return randomTeam;
 	}
 }

@@ -2,8 +2,7 @@ package com.sateekot.soccer.controller;
 
 import static com.sateekot.soccer.utils.MainMenu.EXIT_GAME;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,21 +27,23 @@ public class GameLauncher {
 		OutputWriter outputWriter = new OutputWriter();
 		InputReader inputReader = new InputReader(System.in);
 		if(!H2RepositoryImpl.checkDBConnection()) {
-			outputWriter.printValidationMessage("Creaing metadata for first time.");
+			outputWriter.printMessage("Creaing metadata for first time.");
 			H2RepositoryImpl.createMetaData();
 		}
 		StringBuilder welcomeMessage = new StringBuilder();
 		welcomeMessage.append("------------------------------------------------------------------------------\n");
 		welcomeMessage.append("Welcome to Command Line Soccer!\n");
-		File file = new File(ClassLoader.getSystemResource("WelcomeMessage").getFile());
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		InputStream inputStream = classLoader.getResourceAsStream("WelcomeMessage");
 		try {
-			Scanner sc = new Scanner(file);
+			Scanner sc = new Scanner(inputStream);
 			while (sc.hasNextLine()) {
 				welcomeMessage.append((sc.nextLine())+" \n");
 			}
 			sc.close();
-			System.out.println(welcomeMessage.toString());
-		} catch(FileNotFoundException fnfe) {
+			outputWriter.printMessage(welcomeMessage.toString());
+		} catch(Exception fnfe) {
+			fnfe.printStackTrace();
 			LOGGER.log(Level.SEVERE, "Welcome file not found!");
 		}
 		
@@ -57,22 +58,22 @@ public class GameLauncher {
 			
 			userOptionNumber = SoccerUtils.isValidOptionByUser(userOptionString, lengthOfMainMenuItems);
 			if(userOptionNumber == Integer.MIN_VALUE) {
-				outputWriter.printValidationMessage("Please select the numeric value from the given options.");
+				outputWriter.printMessage("Please select the numeric value from the given options.");
 				continue;
 			}
 			if(userOptionNumber == 0) {
-				outputWriter.printValidationMessage("Game cannot be saved here.");
+				outputWriter.printMessage("Game cannot be saved here.");
 				continue;
 			}
 
 			MainMenu mainMenu = MainMenu.values()[userOptionNumber-1];
 			switch(mainMenu) {
 			case NEW_GAME:
-				GameControllerImpl gameController = new GameControllerImpl(inputReader, outputWriter);
+				GameController gameController = new GameControllerImpl(inputReader, outputWriter);
 				gameController.createNewGame();
 				break;
 			case LOAD_GAME:
-				GameControllerImpl loadGame = new GameControllerImpl(inputReader, outputWriter);
+				GameController loadGame = new GameControllerImpl(inputReader, outputWriter);
 				loadGame.loadGame();
 				break;
 			default:

@@ -1,6 +1,6 @@
 package com.sateekot.soccer.controller;
 
-import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -76,11 +76,11 @@ public class GameControllerImpl implements GameController {
 		String userOptionString = inputReader.readInput();
 		Integer inputOption = SoccerUtils.isValidOptionByUser(userOptionString, lengthOfTeamType);
 		if(inputOption == Integer.MIN_VALUE) {
-			outputWriter.printValidationMessage("Please select the numeric value from the given options.");
+			outputWriter.printMessage("Please select the numeric value from the given options.");
 			createNewGame();
 		}
 		if(inputOption == 0) {
-			outputWriter.printValidationMessage("Game cannot be saved here.");
+			outputWriter.printMessage("Game cannot be saved here.");
 			createNewGame();
 		}
 
@@ -90,7 +90,7 @@ public class GameControllerImpl implements GameController {
 				createNewTeamAndPlay();
 				break;
 			case SELECT_TEAM:
-				outputWriter.printValidationMessage("This functionality is not available in current release. Will be deployed in next release.");
+				outputWriter.printMessage("This functionality is not available in current release. Will be deployed in next release.");
 				break;
 			default:
 				break;
@@ -101,7 +101,7 @@ public class GameControllerImpl implements GameController {
 		outputWriter.printMessage("Enter Unique Team Name : ");
 		String teamName = inputReader.readInput();
 		if(teamName.equalsIgnoreCase("0")) {
-			outputWriter.printValidationMessage("0 (Zero) can not be used as Team name. It has special meaning(Save/Exit) in this game. Please create team and save the game.");
+			outputWriter.printMessage("0 (Zero) can not be used as Team name. It has special meaning(Save/Exit) in this game. Please create team and save the game.");
 			createNewTeamAndPlay();
 		}
 		outputWriter.printMessage("Create 6 players");
@@ -110,7 +110,7 @@ public class GameControllerImpl implements GameController {
 			outputWriter.printMessage("Enter player"+i+" name:");
 			String playerName = inputReader.readInput();
 			if(playerName.equalsIgnoreCase("0")) {
-				outputWriter.printValidationMessage("0 (Zero) can not be used as Player name. It has special meaning(Save/Exit) in this game. Please create team and save the game.");
+				outputWriter.printMessage("0 (Zero) can not be used as Player name. It has special meaning(Save/Exit) in this game. Please create team and save the game.");
 				i--;
 				continue;
 			}
@@ -122,7 +122,7 @@ public class GameControllerImpl implements GameController {
 			String inputSelected = inputReader.readInput();
 			Integer inputOption = SoccerUtils.isValidOptionByUser(inputSelected, playerTypeValuesSize);
 			if(inputOption == Integer.MIN_VALUE) {
-				outputWriter.printValidationMessage("Please select the numeric value from the given options.");
+				outputWriter.printMessage("Please select the numeric value from the given options.");
 				i--;
 				continue;
 			}
@@ -135,7 +135,7 @@ public class GameControllerImpl implements GameController {
 			PlayerType playerType = PlayerType.values()[inputOption-1];
 			Player player = new Player(playerName,playerType,0);
 			if(playersList.contains(player)) {
-				outputWriter.printFailMessage("Player with same name already created in your team. Please use differnt name");
+				outputWriter.printMessage("Player with same name already created in your team. Please use differnt name");
 				i--;
 				continue;
 			}
@@ -149,7 +149,8 @@ public class GameControllerImpl implements GameController {
 			}
 			//TODO ask user to select computer team
 			outputWriter.printMessage("Selecting computer team...");
-			Team comTeam = h2Repository.loadTeam("PSG");
+			String comRandomTeam = SoccerUtils.comRandomTeam();
+			Team comTeam = h2Repository.loadTeam(comRandomTeam);
 			outputWriter.printMessage("Computer team selected: "+comTeam.getTeamName());
 			outputWriter.printMessage("Computer Players: ");
 			printPlayerInformation(comTeam.getPlayersList());
@@ -166,32 +167,37 @@ public class GameControllerImpl implements GameController {
 				comTeamNonPlayedPlayerList.add(playerStats);
 			});
 			
+			boolean readyToPlay = true;
 			// TODO change option 1 to Enter to start the game.
 			while(true) {
 				outputWriter.printMessage("Press 1 to start the game!");
 				String userOptionString = inputReader.readInput();
 				if(userOptionString.equals("1")) {
+					readyToPlay = true;
 					break;
 				}
 				if(userOptionString.equals("0")) {
-					outputWriter.printValidationMessage("...Saving Game...");
+					outputWriter.printMessage("...Saving Game...");
 					subMenuDisplayV1(0, userTeam.getTeamName(), Collections.emptyList(), userTeamNonPlayedPlayerList, comTeam.getTeamName(), Collections.emptyList(), comTeamNonPlayedPlayerList);
+					readyToPlay=false;
 					break;
 				}
 			}
 
-			GameStateModel gameState = new GameStateModel();
-			gameState.setUserTeamName(userTeam.getTeamName());
-			gameState.setUserTeamNonPlayedPlayerList(userTeamNonPlayedPlayerList);
-			gameState.setUserTeamPlayedPlayerList(Collections.emptyList());
-			gameState.setComTeamName(comTeam.getTeamName());
-			gameState.setComTeamNonPlayedPlayerList(comTeamNonPlayedPlayerList);
-			gameState.setComTeamPlayedPlayerList(Collections.emptyList());
-			
-			playGame(gameState);
+			if(readyToPlay) {
+				GameStateModel gameState = new GameStateModel();
+				gameState.setUserTeamName(userTeam.getTeamName());
+				gameState.setUserTeamNonPlayedPlayerList(userTeamNonPlayedPlayerList);
+				gameState.setUserTeamPlayedPlayerList(Collections.emptyList());
+				gameState.setComTeamName(comTeam.getTeamName());
+				gameState.setComTeamNonPlayedPlayerList(comTeamNonPlayedPlayerList);
+				gameState.setComTeamPlayedPlayerList(Collections.emptyList());	
+				
+				playGame(gameState);
+			}
 			
 		} catch(TeamAlreadyExistException taex) {
-			outputWriter.printFailMessage(taex.getMessage());
+			outputWriter.printMessage(taex.getMessage());
 		}
 		catch (SoccerDBException ex) {
 			ex.printStackTrace();
@@ -205,9 +211,10 @@ public class GameControllerImpl implements GameController {
 	public void playGame(GameStateModel gameState) {
 		StringBuilder court = new StringBuilder();
 		GameStats gameStats = new GameStats();
-		File file = new File(ClassLoader.getSystemResource("Court").getFile());
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		InputStream inputStream = classLoader.getResourceAsStream("Court");
 		try {
-			Scanner sc = new Scanner(file);
+			Scanner sc = new Scanner(inputStream);
 			while (sc.hasNextLine()) {
 				court.append((sc.nextLine())+" \n");
 			}
@@ -229,7 +236,7 @@ public class GameControllerImpl implements GameController {
 				String userOptionStringForPlayer = inputReader.readInput();
 				Integer userOptionNumberForPlayer = SoccerUtils.isValidOptionByUser(userOptionStringForPlayer, size);
 				if(userOptionNumberForPlayer == Integer.MIN_VALUE) {
-					outputWriter.printValidationMessage("Please select the numeric value from the given options.");
+					outputWriter.printMessage("Please select the numeric value from the given options.");
 					j--;
 					continue;
 				}
@@ -248,7 +255,7 @@ public class GameControllerImpl implements GameController {
 				String userOptionStringForGoalPosition = inputReader.readInput();
 				Integer userOptionNumberForGoalPosition = SoccerUtils.isValidOptionByUser(userOptionStringForGoalPosition, sizeOfGoalScoringPositions);
 				while(userOptionNumberForGoalPosition == Integer.MIN_VALUE) {
-					outputWriter.printValidationMessage("Please select the numeric value from the given options.");
+					outputWriter.printMessage("Please select the numeric value from the given options.");
 					userOptionStringForGoalPosition = inputReader.readInput();
 					userOptionNumberForGoalPosition = SoccerUtils.isValidOptionByUser(userOptionStringForGoalPosition, sizeOfGoalScoringPositions);
 				}
@@ -264,11 +271,11 @@ public class GameControllerImpl implements GameController {
 				if(computerGoalKeeper.save(userOptionForGoal, StringUtils.EMPTY)) {
 					userPlayerStats.setScored(true);
 					userPlayerStats.setPlayed(true);
-					outputWriter.printSuccessMessage(player.getName()+ " scored the goal!");
+					outputWriter.printMessage(player.getName()+ " scored the goal!");
 				} else {
 					userPlayerStats.setScored(false);
 					userPlayerStats.setPlayed(true);
-					outputWriter.printFailMessage(player.getName()+" missed it!");
+					outputWriter.printMessage(player.getName()+" missed it!");
 				}
 				userTeamPlayerStats.add(userPlayerStats);
 				userPlayers.remove(playerStats);
@@ -288,13 +295,13 @@ public class GameControllerImpl implements GameController {
 				
 				while(userOptionNumberToSaveGoal == 0) {
 
-					outputWriter.printValidationMessage("Please finish the move and save the game!");
+					outputWriter.printMessage("Please finish the move and save the game!");
 					userOptionStringToSaveGoal = inputReader.readInput();
 					userOptionNumberToSaveGoal = SoccerUtils.isValidOptionByUser(userOptionStringToSaveGoal, sizeOfGoalScoringPositions);
 				}
 				userOptionNumberToSaveGoal = SoccerUtils.isValidOptionByUser(userOptionStringToSaveGoal, sizeOfGoalScoringPositions);
 				while(userOptionNumberToSaveGoal == Integer.MIN_VALUE) {
-					outputWriter.printValidationMessage("Please select the numeric value from the given options.");
+					outputWriter.printMessage("Please select the numeric value from the given options.");
 					userOptionStringToSaveGoal = inputReader.readInput();
 					userOptionNumberToSaveGoal = SoccerUtils.isValidOptionByUser(userOptionStringToSaveGoal, sizeOfGoalScoringPositions);
 				}
@@ -306,11 +313,11 @@ public class GameControllerImpl implements GameController {
 				if(userGoalKeeper.save(userOptionToSaveGoal, compOptionForGoal)) {
 					compPlayerStats.setScored(false);
 					compPlayerStats.setPlayed(true);
-					outputWriter.printSuccessMessage("You saved the goal.");
+					outputWriter.printMessage("You saved the goal.");
 				} else {
 					compPlayerStats.setScored(true);
 					compPlayerStats.setPlayed(true);
-					outputWriter.printFailMessage("You let opponent to score the goal.");
+					outputWriter.printMessage("You let opponent to score the goal.");
 				}
 				comTeamPlayerStats.add(compPlayerStats);
 				listOfComPlayers.remove(compPlayerStats);
@@ -325,14 +332,14 @@ public class GameControllerImpl implements GameController {
 				
 				long comTeamGoals = comTeamPlayerStats.stream().filter(PlayerStats::isScored).count();
 				if(userTeamGoals>comTeamGoals) {
-					outputWriter.printSuccessMessage("You won the game.");
+					outputWriter.printMessage("You won the game.");
 				} else if(userTeamGoals < comTeamGoals) {
-					outputWriter.printFailMessage("You lost the game.");
+					outputWriter.printMessage("You lost the game.");
 				} else {
-					outputWriter.printFailMessage("Draw.");
+					outputWriter.printMessage("Draw.");
 				}
-				outputWriter.printSuccessMessage(gameState.getUserTeamName()+"        "+gameState.getComTeamName());;
-				outputWriter.printSuccessMessage(userTeamGoals+"                 "+comTeamGoals);
+				outputWriter.printMessage(gameState.getUserTeamName()+"        "+gameState.getComTeamName());;
+				outputWriter.printMessage(userTeamGoals+"                 "+comTeamGoals);
 				h2Repository.saveGameStats(gameStats);
 				
 				//TODO delete saved games if there are any.
@@ -344,7 +351,7 @@ public class GameControllerImpl implements GameController {
 		} catch (Exception ex) {
 			
 			//TODO save to log file
-			outputWriter.printFailMessage("Problems occured while playing the game.");
+			outputWriter.printMessage("Problems occured while playing the game.");
 		}
 		
 	}
@@ -376,7 +383,7 @@ public class GameControllerImpl implements GameController {
 		}
 		String userOptionForSubmenu = inputReader.readInput();		
 		if(userOptionForSubmenu.equals("S")) {
-			outputWriter.printValidationMessage("...Saving Game...");
+			outputWriter.printMessage("...Saving Game...");
 			try {
 				h2Repository.saveGameState(gameId, userTeamName, playedUserStats,notPlayedUserStats, comTeamName, comUserStats,notPlayedComStats);
 				outputWriter.printMessage("Game Saved successfully.");
@@ -384,7 +391,7 @@ public class GameControllerImpl implements GameController {
 				outputWriter.printMessage("Failed to save the game.");
 			}
 		}else if(userOptionForSubmenu.equals("E")) {
-			outputWriter.printValidationMessage("...Exiting Game...");
+			outputWriter.printMessage("...Exiting Game...");
 		} else {
 			subMenuDisplayV1(gameId, userTeamName, playedUserStats,notPlayedUserStats, comTeamName, comUserStats,notPlayedComStats);
 		}
@@ -400,7 +407,7 @@ public class GameControllerImpl implements GameController {
 
 	@Override
 	public void loadGame() {
-		outputWriter.printValidationMessage("Loading saved games..Please wait.");
+		outputWriter.printMessage("Loading saved games..Please wait.");
 		try {
 			List<SavedGame> listOfSavedGames = h2Repository.loadSavedGames();
 			outputWriter.printMessage("Select game to load.");
@@ -414,19 +421,25 @@ public class GameControllerImpl implements GameController {
 			String userOptionToLoadSavedGame = inputReader.readInput();
 			int lengthOfSavedGamesList =listOfSavedGames.size();
 			Integer userOption = SoccerUtils.isValidOptionByUser(userOptionToLoadSavedGame, lengthOfSavedGamesList);
-			while(userOption == Integer.MIN_VALUE) {
-				outputWriter.printValidationMessage("Please select the numeric value from the given options.");
+			while(userOption == 0) {
+
+				outputWriter.printMessage("Game cannot be saved here.");
 				userOptionToLoadSavedGame = inputReader.readInput();
 				userOption = SoccerUtils.isValidOptionByUser(userOptionToLoadSavedGame, lengthOfSavedGamesList);
 			}
-			
+			userOption = SoccerUtils.isValidOptionByUser(userOptionToLoadSavedGame, lengthOfSavedGamesList);
+			while(userOption == Integer.MIN_VALUE) {
+				outputWriter.printMessage("Please select the numeric value from the given options.");
+				userOptionToLoadSavedGame = inputReader.readInput();
+				userOption = SoccerUtils.isValidOptionByUser(userOptionToLoadSavedGame, lengthOfSavedGamesList);
+			}
 			SavedGame savedGame = userOptionToGameIdMap.get(userOption);
 			GameStateModel gameState = h2Repository.loadSaveGameState(savedGame.getUserTeamName(), savedGame.getComTeamName(), savedGame.getGameId());
 			gameState.setGameId(savedGame.getGameId());
 			playGame(gameState);
 			
 		} catch(SoccerDBException sdbex) {
-			outputWriter.printFailMessage(sdbex.getMessage());
+			outputWriter.printMessage(sdbex.getMessage());
 		}
 				
 	}

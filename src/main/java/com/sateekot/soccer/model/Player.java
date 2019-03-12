@@ -63,8 +63,6 @@ public class Player implements Serializable {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result + ((playerType == null) ? 0 : playerType.hashCode());
-		result = prime * result + ((skillPoints == null) ? 0 : skillPoints.hashCode());
 		return result;
 	}
 
@@ -81,13 +79,6 @@ public class Player implements Serializable {
 			if (other.name != null)
 				return false;
 		} else if (!name.equals(other.name))
-			return false;
-		if (playerType != other.playerType)
-			return false;
-		if (skillPoints == null) {
-			if (other.skillPoints != null)
-				return false;
-		} else if (!skillPoints.equals(other.skillPoints))
 			return false;
 		return true;
 	}

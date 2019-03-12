@@ -10,22 +10,23 @@ import java.io.PrintStream;
  */
 public class OutputWriter {
 
+
 	private PrintStream printStream = new PrintStream(System.out);
 	
 	public void printMessage(String message) {
-		printStream.println((char)27 + "[30m" +message);
+		printStream.println( message);
 	}
 	
-	public void printValidationMessage(String message) {
-		printStream.println((char)27 + "[91m" + message);
-	}
-	
-	public void printSuccessMessage(String message) {
-		printStream.println((char)27 + "[36m" + message);
-	}
-	
-	public void printFailMessage(String message) {
-		printStream.println((char)27 + "[94m" + message);
-	}
+//	public void printValidationMessage(String message) {
+//		printStream.println(ANSI_BRIGHT_RED + message);
+//	}
+//	
+//	public void printSuccessMessage(String message) {
+//		printStream.println(ANSI_CYAN + message);
+//	}
+//	
+//	public void printFailMessage(String message) {
+//		printStream.println(ANSI_BRIGHT_BLUE + message);
+//	}
 	
 }

@@ -10,6 +10,19 @@ This is command line based soccer game. Currently it supports only shoot-out pen
 
 ## Build
 
-> git clone ""
-> cd CommandLineSoccer
-> mvn clean install
+```
+git clone "https://github.com/sateekot/CommandLineSoccer.git"
+cd CommandLineSoccer
+mvn clean install
+```
+
+## Jar
+
+Java should be installed in machine.
+Download the CommandLineSoccer.jar and run below commands.
+
+```
+java -version
+java -jar CommandLineSoccer.jar
+
+```
